@@ -102,6 +102,7 @@ public class DishServiceImpl implements DishService {
         }
 
 
+/*
         for(Long id : ids){
             //删除菜品
             dishMapper.deleteById(id);
@@ -109,6 +110,10 @@ public class DishServiceImpl implements DishService {
             dishFlavorMapper.deleteByDishId(id);
         }
 
+*/
+        //批量删除
+        dishMapper.deleteBatchByIds(ids);
+        dishFlavorMapper.deleteBatchByDishIds(ids);
 
 
     }
