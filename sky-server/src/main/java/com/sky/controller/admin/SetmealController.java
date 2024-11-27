@@ -2,7 +2,9 @@ package com.sky.controller.admin;
 
 import com.sky.dto.DishDTO;
 import com.sky.dto.SetmealDTO;
+import com.sky.dto.SetmealPageQueryDTO;
 import com.sky.entity.Setmeal;
+import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.SetmealService;
 import io.swagger.annotations.Api;
@@ -33,5 +35,18 @@ public class SetmealController {
         log.info("save setmealDTO: {}", setmealDTO);
         setmealService.saveWithDish(setmealDTO);
         return Result.success();
+    }
+
+    /**
+     * 分页查询套餐
+     * @param setmealPageQueryDTO
+     * @return
+     */
+    @GetMapping("page")
+    @ApiOperation("分页查询套餐")
+    public Result<PageResult> page(SetmealPageQueryDTO setmealPageQueryDTO){
+        log.info("page setmealPageQueryDTO: {}", setmealPageQueryDTO);
+        PageResult pageResult = setmealService.pageQuery(setmealPageQueryDTO);
+        return Result.success(pageResult);
     }
 }
