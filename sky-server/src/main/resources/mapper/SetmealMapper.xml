@@ -3,11 +3,25 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.sky.mapper.SetmealMapper">
 
-    <insert id="insert">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO setmeal (category_id, name, price, description, image, create_time, update_time, create_user, update_user, status)
 
         VALUES (#{categoryId}, #{name}, #{price}, #{description}, #{image}, #{createTime}, #{updateTime}, #{createUser}, #{updateUser}, #{status})
     </insert>
+    <update id="update">
+        UPDATE setmeal
+        SET category_id = #{categoryId}, name = #{name}, price = #{price}, description = #{description}, image = #{image}, update_time = #{updateTime}, update_user = #{updateUser}, status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteBatch">
+        DELETE FROM setmeal
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
     <select id="pageQuery" resultType="com.sky.vo.SetmealVO">
         select
         s.*,c.name categoryName
