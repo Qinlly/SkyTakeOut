@@ -70,6 +70,7 @@
         </where>
         ORDER BY d.create_time DESC
     </select>
+
     <select id="list" resultType="com.sky.entity.Dish" parameterType="Dish">
         select * from dish
         <where>

@@ -1,19 +1,24 @@
 package com.sky.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
+import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.dto.OrdersPaymentDTO;
 import com.sky.dto.OrdersSubmitDTO;
 import com.sky.entity.*;
 import com.sky.exception.AddressBookBusinessException;
 import com.sky.exception.OrderBusinessException;
 import com.sky.mapper.*;
+import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.OrderService;
 import com.sky.utils.WeChatPayUtil;
 import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderSubmitVO;
+import com.sky.vo.OrderVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +28,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -149,4 +155,95 @@ public class OrderServiceImpl implements OrderService {
 
         orderMapper.update(orders);
     }
+
+    /**
+     * 历史订单列表
+     *
+     * @param page
+     * @param pageSize
+     * @param status
+     * @return
+     */
+    @Override
+    public PageResult page(int page, int pageSize, Integer status) {
+        PageHelper.startPage(page, pageSize);
+
+        OrdersPageQueryDTO ordersPageQueryDTO = new OrdersPageQueryDTO();
+        ordersPageQueryDTO.setStatus(status);
+        ordersPageQueryDTO.setUserId(BaseContext.getCurrentId());
+
+        //分页查询
+        Page<Orders> orders = orderMapper.pageQuery(ordersPageQueryDTO);
+
+        List<OrderVO> orderVOList = new ArrayList<>();
+
+        if (orders == null || orders.size() == 0) {
+
+            for(Orders order : orders){
+
+                OrderVO orderVO = new OrderVO();
+                orderVO.setOrderDetailList(orderDetailMapper.listByOrderId(order.getId()));
+
+                BeanUtils.copyProperties(order,orderVO);
+                orderVOList.add(orderVO);
+
+            }
+        }
+
+        return new PageResult(orders.getTotal(), orderVOList);
+    }
+
+    /**
+     * 订单详情查询
+     * @param id 订单id
+     * @return
+     */
+    @Override
+    public OrderVO orderDetail(Long id) {
+        Orders orders = orderMapper.getById(id);
+        OrderVO orderVO = new OrderVO();
+
+        if(orders == null){
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+
+        BeanUtils.copyProperties(orders,orderVO);
+        orderVO.setOrderDetailList(orderDetailMapper.listByOrderId(id));
+
+        return orderVO;
+    }
+
+    /**
+     * 取消订单
+     * @param id 订单id
+     * @return
+     */
+    @Override
+    public void userCancel(Long id) throws Exception {
+        Orders orders = orderMapper.getById(id);
+        if(orders == null){
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+
+        if(Objects.equals(orders.getStatus(), Orders.TO_BE_CONFIRMED) || orders.getStatus().equals(Orders.PENDING_PAYMENT)){
+            if (Objects.equals(orders.getStatus(), Orders.TO_BE_CONFIRMED)) {
+                //调用微信支付退款接口
+                weChatPayUtil.refund(
+                        orders.getNumber(), //商户订单号
+                        orders.getNumber(), //商户退款单号
+                        new BigDecimal(0.01),//退款金额，单位 元
+                        new BigDecimal(0.01));//原订单金额
+            }
+            //支付状态修改为 退款
+            orders.setPayStatus(Orders.REFUND);
+        }else{
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+         //订单状态修改为 取消
+        orders.setStatus(Orders.CANCELLED);
+        orders.setCancelTime(LocalDateTime.now());
+        orders.setCancelReason("用户取消订单");
+        orderMapper.update(orders);
+    }
+
 }
