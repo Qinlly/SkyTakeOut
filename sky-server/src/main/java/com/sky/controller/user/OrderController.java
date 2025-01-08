@@ -54,7 +54,7 @@ public class OrderController {
     }
 
     /**
-     * 历史订单查询
+     * 历史订单分页查询
      * @param page, pageSize, status 订单状态 1待付款 2待接单 3已接单 4派送中 5已完成 6已取消
      * @return
      */
@@ -93,5 +93,17 @@ public class OrderController {
     }
 
 
+    /**
+     * 再来一单
+     * @param id 订单id
+     * @return
+     */
+    @PostMapping("repetition/{id}")
+    @ApiOperation("再来一单")
+    public Result repetition(@PathVariable("id") Long id) throws Exception {
+        log.info("再来一单：{}", id);
+        orderService.repetition(id);
+        return Result.success();
+    }
 
 }
