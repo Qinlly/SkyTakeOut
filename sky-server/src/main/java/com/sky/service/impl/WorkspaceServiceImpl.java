@@ -144,7 +144,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
     /**
      * 查询套餐总览
-     *
      * @return
      */
     public SetmealOverViewVO getSetmealOverView() {
